@@ -36,6 +36,11 @@ namespace DeepLearning
         private List<double[]> biases;
         private List<double[,]> weights;
 
+        private List<int[]> nabla_b;
+        private List<int[]> nabla_w;
+        private List<double[]> mini_batch;
+
+
         Random random;
 
         public Form1()
@@ -52,6 +57,8 @@ namespace DeepLearning
 
             biases = new List<double[]>();
             weights = new List<double[,]>();
+            nabla_b = new List<int[]>();
+            nabla_w = new List<int[]>();
             Init(sizes);
         }
 
@@ -178,7 +185,7 @@ namespace DeepLearning
                 {
                     for (int col = 0; col < sizes[i]; ++col)
                     {
-                        weights[weights.Count - 1][col, row] = random.NextDouble();
+                        weights[weights.Count - 1][row, col] = random.NextDouble();
                     }
                 }
             }
