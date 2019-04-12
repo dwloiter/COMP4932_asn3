@@ -178,7 +178,7 @@ namespace DeepLearning
                 {
                     for (int col = 0; col < sizes[i]; ++col)
                     {
-                        weights[weights.Count - 1][col, row] = random.NextDouble();
+                        weights[weights.Count - 1][row, col] = random.NextDouble();
                     }
                 }
             }
