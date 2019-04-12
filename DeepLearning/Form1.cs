@@ -183,5 +183,33 @@ namespace DeepLearning
                 }
             }
         }
+
+        private void SGD(int epochs, int miniBatchSize, int eta)
+        {
+            int nTest = testInputs.Count;
+            int nTraining = trainingInputs.Count;
+
+            for (int j = 0; j < epochs; ++j)
+            {
+            }
+        }
+
+        private void shuffleTraining()
+        {
+            for (int i = 0; i < trainingInputs.Count; ++i)
+            {
+                int index = random.Next(trainingInputs.Count);
+                if (i != index)
+                {
+                    double[] temp = trainingInputs[i];
+                    trainingInputs[i] = trainingInputs[index];
+                    trainingInputs[index] = temp;
+
+                    int r = trainingResults[i];
+                    trainingResults[i] = trainingResults[index];
+                    trainingResults[index] = r;
+                }
+            }
+        }
     }
 }
