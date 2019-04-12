@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.168
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepLearning", "DeepLearning\DeepLearning.csproj", "{EFBBFE96-EB8F-4F01-B4C4-A0D2AD65571C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EFBBFE96-EB8F-4F01-B4C4-A0D2AD65571C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFBBFE96-EB8F-4F01-B4C4-A0D2AD65571C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFBBFE96-EB8F-4F01-B4C4-A0D2AD65571C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFBBFE96-EB8F-4F01-B4C4-A0D2AD65571C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BE23B378-8260-4495-804A-EA6F1B743850}
+	EndGlobalSection
+EndGlobal
