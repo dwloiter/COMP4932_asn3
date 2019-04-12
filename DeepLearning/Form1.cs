@@ -36,6 +36,11 @@ namespace DeepLearning
         private List<double[]> biases;
         private List<double[,]> weights;
 
+
+        private List<int[]> nabla_b;
+        private List<int[]> nabla_w;
+        private List<double[]> mini_batch;
+
         Random random;
 
         public Form1()
@@ -183,5 +188,7 @@ namespace DeepLearning
                 }
             }
         }
+
+       
     }
 }
