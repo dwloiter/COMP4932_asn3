@@ -198,6 +198,13 @@ namespace DeepLearning
 
             for (int j = 0; j < epochs; ++j)
             {
+                shuffleTraining();
+                for (int i = 0; i < nTraining; i += miniBatchSize)
+                {
+                    // update mini batch
+                }
+
+                // evaluate
             }
         }
 
