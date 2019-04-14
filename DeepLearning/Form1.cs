@@ -232,55 +232,57 @@ namespace DeepLearning
         
         private void update_mini_batch(int startIndex, int endIndex, float eta)
         {
-           for(int b = 0; b < biases.Count(); ++b)
-           {
+            for(int b = 0; b < biases.Count(); ++b)
+            {
                 nabla_b.Add(new double[biases[b].Length]);
-           }
-           for(int w = 0; w < weights.Count(); ++w)
-           {
+            }
+            for(int w = 0; w < weights.Count(); ++w)
+            {
                 nabla_w.Add(new double[weights[w].GetLength(0), weights[w].GetLength(1)]);
-           }
-
+            }
            
-           List<double[]> delta_nabla_b;
-           List<double[,]> delta_nabla_w;
+            List<double[]> delta_nabla_b;
+            List<double[,]> delta_nabla_w;
 
-           for(int x = 0; x < mini_batch.Count; ++x)
-           {
-                for(int y = 0; y < mini_batch.Count()-1; ++y)
+            for(int x = startIndex; x < endIndex; ++x)
+            {
+                backpropNabla(trainingInputs[x], trainingResults[x], out delta_nabla_b, out delta_nabla_w);
+
+                for (int i = 0; i < nabla_b[x].Length; ++i)
                 {
-                    delta_nabla_b = backpropNablaB(x, y);
-                    delta_nabla_w = backpropNablaW(x, y);
-                    
-                    
-                    nabla_b[x][y] += delta_nabla_b[x][y];
-                    nabla_w[x, y][x, y] += delta_nabla_w[x, y][x, y];
-
-
+                    nabla_b[x][i] += delta_nabla_b[x][i];
                 }
-           }
+
+                for (int i = 0; i < nabla_w[x].GetLength(0); ++i)
+                {
+                    for (int j = 0; j < nabla_w[x].GetLength(1); ++j)
+                    {
+                        nabla_w[x][i, j] += delta_nabla_w[x][i, j];
+                    }
+                }
+            }
            
-           for(int x = 0; x < weights.Count; ++x)
-           {
-                 for(int y = 0; y < weights.Count-1; ++y)
-                 {
-                    weights[x, y] -= (eta/mini_batch.Count) * nabla_w[x,y];
-                 }
-           }
+            for(int x = 0; x < weights.Count; ++x)
+            {
+                for(int y = 0; y < weights[x].GetLength(0); ++y)
+                {
+                    for (int z = 0; z < weights[x].GetLength(1); ++z)
+                    {
+                        weights[x][y, z] -= (eta/mini_batch.Count) * nabla_w[x][y,z];
+                    }
+                }
+            }
 
-           for(int i = 0 ; i < biases.Count; ++i)
-           {
-                biases[i] -= (eta/mini_batch.Count) * nabla_b[i];
-           }
-
+            for(int i = 0 ; i < biases.Count; ++i)
+            {
+                for (int j = 0; j < biases[i].Length; ++j)
+                {
+                    biases[i][j] -= (eta/mini_batch.Count) * nabla_b[i][j];
+                }
+            }
         }
 
-        private void backpropNablaB(int x, int y, out List<double[]> nabla_b, out List<double[,]> nabla_w)
-        {
-
-        }
-
-        private List<double[,]>backpropNablaW(int x, int y)
+        private void backpropNabla(double[] x, int y, out List<double[]> nabla_b, out List<double[,]> nabla_w)
         {
 
         }
