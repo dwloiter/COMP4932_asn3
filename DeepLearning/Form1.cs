@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+
 namespace DeepLearning
 {
     public partial class Form1 : Form
@@ -246,7 +247,7 @@ namespace DeepLearning
 
             for(int x = startIndex; x < endIndex; ++x)
             {
-                backpropNabla(trainingInputs[x], trainingResults[x], out delta_nabla_b, out delta_nabla_w);
+                backprop(trainingInputs[x], trainingResults[x], out delta_nabla_b, out delta_nabla_w);
 
                 for (int i = 0; i < nabla_b[x].Length; ++i)
                 {
@@ -282,7 +283,7 @@ namespace DeepLearning
             }
         }
 
-        private void backpropNabla(double[] x, int y, out List<double[]> nabla_b, out List<double[,]> nabla_w)
+        private void backprop(double[] x, int y, out List<double[]> nabla_b, out List<double[,]> nabla_w)
         {
 
         }
@@ -296,10 +297,8 @@ namespace DeepLearning
         {
             return sigmoid(z) * (1-sigmoid(z));
         }
+        
 
-        //Vector cost_derivative()
-        //{
-        //    Vector 
-        //}
+
     }
 }
