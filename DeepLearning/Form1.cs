@@ -164,9 +164,6 @@ namespace DeepLearning
             streamReader.Close();
             stream.Close();
         }
-        
-        
-
 
         private void Init(int[] sizes)
         {
@@ -206,6 +203,7 @@ namespace DeepLearning
                 for (int i = 0; i < nTraining; i += miniBatchSize)
                 {
                     // update mini batch
+                    update_mini_batch(i, i + miniBatchSize, eta);
                 }
 
                 // evaluate
@@ -229,22 +227,22 @@ namespace DeepLearning
                 }
             }
         }
-        
+
         private void update_mini_batch(int startIndex, int endIndex, float eta)
         {
-            for(int b = 0; b < biases.Count(); ++b)
+            for (int b = 0; b < biases.Count(); ++b)
             {
                 nabla_b.Add(new double[biases[b].Length]);
             }
-            for(int w = 0; w < weights.Count(); ++w)
+            for (int w = 0; w < weights.Count(); ++w)
             {
                 nabla_w.Add(new double[weights[w].GetLength(0), weights[w].GetLength(1)]);
             }
-           
+
             List<double[]> delta_nabla_b;
             List<double[,]> delta_nabla_w;
 
-            for(int x = startIndex; x < endIndex; ++x)
+            for (int x = startIndex; x < endIndex; ++x)
             {
                 backpropNabla(trainingInputs[x], trainingResults[x], out delta_nabla_b, out delta_nabla_w);
 
@@ -261,45 +259,160 @@ namespace DeepLearning
                     }
                 }
             }
-           
-            for(int x = 0; x < weights.Count; ++x)
+
+            for (int x = 0; x < weights.Count; ++x)
             {
-                for(int y = 0; y < weights[x].GetLength(0); ++y)
+                for (int y = 0; y < weights[x].GetLength(0); ++y)
                 {
                     for (int z = 0; z < weights[x].GetLength(1); ++z)
                     {
-                        weights[x][y, z] -= (eta/mini_batch.Count) * nabla_w[x][y,z];
+                        weights[x][y, z] -= (eta / mini_batch.Count) * nabla_w[x][y, z];
                     }
                 }
             }
 
-            for(int i = 0 ; i < biases.Count; ++i)
+            for (int i = 0; i < biases.Count; ++i)
             {
                 for (int j = 0; j < biases[i].Length; ++j)
                 {
-                    biases[i][j] -= (eta/mini_batch.Count) * nabla_b[i][j];
+                    biases[i][j] -= (eta / mini_batch.Count) * nabla_b[i][j];
                 }
             }
         }
 
-        private void backpropNabla(double[] x, int y, out List<double[]> nabla_b, out List<double[,]> nabla_w)
+        private void backpropNabla(double[] x, int y, out List<double[]> delta_nabla_b, out List<double[,]> delta_nabla_w)
         {
+            delta_nabla_b = new List<double[]>();
+            delta_nabla_w = new List<double[,]>();
 
+            for (int b = 0; b < biases.Count(); ++b)
+            {
+                delta_nabla_b.Add(new double[biases[b].Length]);
+            }
+            for (int w = 0; w < weights.Count(); ++w)
+            {
+                delta_nabla_w.Add(new double[weights[w].GetLength(0), weights[w].GetLength(1)]);
+            }
+
+            double[] activation = new double[x.Length];
+            Array.Copy(x, activation, x.Length);
+            List<double[]> activations = new List<double[]>();
+            List<double[]> zs = new List<double[]>();
+
+            for (int i = 0; i < weights.Count; ++i)
+            {
+                double[] z = new double[weights[i].GetLength(0)];
+                double[] temp = new double[weights[i].GetLength(0)];
+                for (int j = 0; j < weights[i].GetLength(0); ++j)
+                {
+                    z[j] = dot(activation, weights[i], j) + biases[i][j];
+                    temp[j] = sigmoid(z[j]);
+                }
+                zs.Add(z);
+                activation = temp;
+                activations.Add(temp);
+            }
+
+            double[] delta = cost_derivative(activations[activations.Count - 1], y);
+            delta_nabla_b[delta_nabla_b.Count - 1] = delta;
+            delta_nabla_w[delta_nabla_w.Count - 1] = mul(delta, activations[activations.Count - 2]);
+
+            for (int i = 2; i < numberOfLayers; ++i)
+            {
+                double[] z = zs[zs.Count - i];
+                double[] sp = new double[z.Length];
+                for (int j = 0; j < sp.Length; ++j)
+                {
+                    sp[j] = sigmoid_prime(z[j]);
+                }
+                delta = mul(weights[weights.Count - i + 1], delta, sp);
+                delta_nabla_b[delta_nabla_b.Count - i] = delta;
+                delta_nabla_w[delta_nabla_w.Count - i] = mul(delta, activations[activations.Count - i - 1]);
+            }
         }
 
-        double sigmoid(int z)
+        double[] dot(double[,] l, double[,] r)
+        {
+            double[] ret = new double[l.GetLength(0)];
+            for (int i = 0; i < l.GetLength(0); ++i)
+            {
+                for (int j = 0; j < l.GetLength(1); ++j)
+                {
+                    ret[i] += l[i, j] * r[i, j];
+                }
+            }
+            return ret;
+        }
+
+        double dot(double[] l, double[,] r, int rIndex)
+        {
+            double ret = 0;
+            for (int i = 0; i < l.Length; ++i)
+            {
+                ret += l[i] * r[rIndex, i];
+            }
+            return ret;
+        }
+
+        double dot(double[] l, double[] r)
+        {
+            double ret = 0;
+            for (int i = 0; i < l.Length; ++i)
+            {
+                ret += l[i] * r[i];
+            }
+
+            return ret;
+        }
+        
+        double[,] mul(double[] vec, double[] matTrans)
+        {
+            double[,] ret = new double[vec.Length, matTrans.Length];
+
+            for (int row = 0; row < ret.GetLength(0); ++row)
+            {
+                for (int col = 0; col < ret.GetLength(1); ++col)
+                {
+                    ret[row, col] = vec[row] * matTrans[row];
+                }
+            }
+
+            return ret;
+        }
+        
+        double[] mul(double[,] matTrans, double[] vec, double[] sp)
+        {
+            double[] ret = new double[vec.Length];
+            for (int i = 0; i < vec.Length; ++i)
+            {
+                for (int j = 0; j < matTrans.GetLength(0); ++j)
+                {
+                    ret[i] += vec[i] * matTrans[j, i] * sp[i];
+                }
+            }
+            return ret;
+        }
+
+        double sigmoid(double z)
         {
             return 1.0/ (1.0 + Math.Pow(Math.E, -z));
         }
 
-        double sigmoid_prime(int z)
+        double sigmoid_prime(double z)
         {
             return sigmoid(z) * (1-sigmoid(z));
         }
 
-        //Vector cost_derivative()
-        //{
-        //    Vector 
-        //}
+        double[] cost_derivative(double[] outputActivations, int y)
+        {
+            double[] ret = new double[outputActivations.Length];
+
+            for (int i = 0; i < outputActivations.Length; ++i)
+            {
+                ret[i] = outputActivations[i] - (y == i ? 1.0 : 0.0);
+            }
+
+            return ret;
+        }
     }
 }
