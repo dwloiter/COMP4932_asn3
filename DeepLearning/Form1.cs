@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+
 namespace DeepLearning
 {
     public partial class Form1 : Form
@@ -36,9 +37,6 @@ namespace DeepLearning
         private List<double[]> biases;
         private List<double[,]> weights;
 
-
-        private List<double[]> nabla_b;
-        private List<double[,]> nabla_w;
         private List<double[,]> mini_batch;
 
         Random random;
@@ -57,11 +55,10 @@ namespace DeepLearning
 
             biases = new List<double[]>();
             weights = new List<double[,]>();
-            nabla_b = new List<double[]>();
-            nabla_w = new List<double[,]>();
             mini_batch = new List<double[,]>();
 
             Init(sizes);
+            SGD(30, 10, 3);
         }
 
         private void LoadData()
@@ -165,14 +162,11 @@ namespace DeepLearning
             streamReader.Close();
             stream.Close();
         }
-        
-        
-
 
         private void Init(int[] sizes)
         {
             numberOfLayers = sizes.Length;
-            for (int i = 1; i < numberOfLayers - 1; ++i)
+            for (int i = 1; i < numberOfLayers; ++i)
             {
                 biases.Add(new double[sizes[i]]);
 
@@ -196,121 +190,294 @@ namespace DeepLearning
             }
         }
 
-       
+        private void SGD(int epochs, int miniBatchSize, int eta)
+        {
+            int nTest = testInputs.Count;
+            int nTraining = trainingInputs.Count;
+
+            for (int j = 0; j < epochs; ++j)
+            {
+                shuffleTraining();
+                for (int i = 0; i < nTraining; i += miniBatchSize)
+                {
+                    // update mini batch
+                    update_mini_batch(i, i + miniBatchSize, eta);
+                }
+
+                // evaluate
+                Console.WriteLine("Epoch " + j + ": " + evaluate() + " / " + testInputs.Count);
+            }
+        }
+
+        private void shuffleTraining()
+        {
+            for (int i = 0; i < trainingInputs.Count; ++i)
+            {
+                int index = random.Next(trainingInputs.Count);
+                if (i != index)
+                {
+                    double[] temp = trainingInputs[i];
+                    trainingInputs[i] = trainingInputs[index];
+                    trainingInputs[index] = temp;
+
+                    int r = trainingResults[i];
+                    trainingResults[i] = trainingResults[index];
+                    trainingResults[index] = r;
+                }
+            }
+        }
+
         private void update_mini_batch(int startIndex, int endIndex, float eta)
         {
-           for(int b = 0; b < biases.Count(); ++b)
-           {
+            List<double[]> nabla_b = new List<double[]>();
+            List<double[,]> nabla_w = new List<double[,]>();
+            for (int b = 0; b < biases.Count(); ++b)
+            {
                 nabla_b.Add(new double[biases[b].Length]);
-           }
-           for(int w = 0; w < weights.Count(); ++w)
-           {
+            }
+            for (int w = 0; w < weights.Count(); ++w)
+            {
                 nabla_w.Add(new double[weights[w].GetLength(0), weights[w].GetLength(1)]);
-           }
+            }
 
-           
-           List<double[]> delta_nabla_b;
-           List<double[,]> delta_nabla_w;
+            List<double[]> delta_nabla_b;
+            List<double[,]> delta_nabla_w;
 
-           for(int x = 0; x < mini_batch.Count; ++x)
-           {
-                for(int y = 0; y < mini_batch.Count-1; ++y)
+            for (int x = startIndex; x < endIndex; ++x)
+            {
+                backprop(trainingInputs[x], trainingResults[x], out delta_nabla_b, out delta_nabla_w);
+
+                for (int i = 0; i < nabla_b.Count; ++i)
                 {
-                    delta_nabla_b = backprop(x, y);
-                    delta_nabla_w = backprop(x, y);
-                    
-                    
-                    nabla_b[x][y] += delta_nabla_b[x][y];
-                    nabla_w[x, y][x, y] += delta_nabla_w[x, y][x, y];
-
-
+                    for (int j = 0; j < nabla_b[i].Length; ++j)
+                    {
+                        nabla_b[i][j] += delta_nabla_b[i][j];
+                    }
                 }
-           }
-           
-           for(int x = 0; x < weights.Count; ++x)
-           {
-                 for(int y = 0; y < weights.Count-1; ++y)
-                 {
-                    weights[x, y] -= (eta/mini_batch.Count) * nabla_w[x,y];
-                 }
-           }
+                
+                for (int k = 0; k < nabla_w.Count; ++k)
+                {
+                    for (int i = 0; i < nabla_w[k].GetLength(0); ++i)
+                    {
+                        for (int j = 0; j < nabla_w[k].GetLength(1); ++j)
+                        {
+                            nabla_w[k][i, j] += delta_nabla_w[k][i, j];
+                        }
+                    }
+                }
+            }
 
-           for(int i = 0 ; i < biases.Count; ++i)
-           {
-                biases[i] -= (eta/mini_batch.Count) * nabla_b[i];
-           }
-
+            for (int x = 0; x < weights.Count; ++x)
+            {
+                for (int y = 0; y < weights[x].GetLength(0); ++y)
+                {
+                    for (int z = 0; z < weights[x].GetLength(1); ++z)
+                    {
+                        weights[x][y, z] -= (eta / mini_batch.Count) * nabla_w[x][y, z];
+                    }
+                }
+            }
+            
+            for (int i = 0; i < biases.Count; ++i)
+            {
+                for (int j = 0; j < biases[i].Length; ++j)
+                {
+                    biases[i][j] -= (eta / mini_batch.Count) * nabla_b[i][j];
+                }
+            }
         }
 
-        private void backprop(int x, int y, out List<double[]> nabla_b, out List<double[,]> nabla_w)
+        private void backprop(double[] x, int y, out List<double[]> delta_nabla_b, out List<double[,]> delta_nabla_w)
         {
+            delta_nabla_b = new List<double[]>();
+            delta_nabla_w = new List<double[,]>();
 
+            for (int b = 0; b < biases.Count(); ++b)
+            {
+                delta_nabla_b.Add(new double[biases[b].Length]);
+            }
+            for (int w = 0; w < weights.Count(); ++w)
+            {
+                delta_nabla_w.Add(new double[weights[w].GetLength(0), weights[w].GetLength(1)]);
+            }
+
+            double[] activation = new double[x.Length];
+            Array.Copy(x, activation, x.Length);
+            List<double[]> activations = new List<double[]>();
+            activations.Add(activation);
+            List<double[]> zs = new List<double[]>();
+
+            for (int i = 0; i < weights.Count; ++i)
+            {
+                double[] z = new double[weights[i].GetLength(0)];
+                double[] temp = new double[weights[i].GetLength(0)];
+                for (int j = 0; j < weights[i].GetLength(0); ++j)
+                {
+                    z[j] = dot(activation, weights[i], j) + biases[i][j];
+                    temp[j] = sigmoid(z[j]);
+                }
+                zs.Add(z);
+                activation = temp;
+                activations.Add(temp);
+            }
+
+            double[] delta = cost_derivative(activations[activations.Count - 1], y);
+            delta_nabla_b[delta_nabla_b.Count - 1] = delta;
+            delta_nabla_w[delta_nabla_w.Count - 1] = mul(delta, activations[activations.Count - 2]);
+
+            for (int i = 2; i < numberOfLayers; ++i)
+            {
+                double[] z = zs[zs.Count - i];
+                double[] sp = new double[z.Length];
+                for (int j = 0; j < sp.Length; ++j)
+                {
+                    sp[j] = sigmoid_prime(z[j]);
+                }
+                delta = mul(weights[weights.Count - i + 1], delta, sp);
+                delta_nabla_b[delta_nabla_b.Count - i] = delta;
+                delta_nabla_w[delta_nabla_w.Count - i] = mul(delta, activations[activations.Count - i - 1]);
+            }
         }
 
+        double[] dot(double[] l, double[,] r)
+        {
+            double[] ret = new double[r.GetLength(0)];
+            for (int i = 0; i < r.GetLength(0); ++i)
+            {
+                for (int j = 0; j < r.GetLength(1); ++j)
+                {
+                    ret[i] += l[i] * r[i, j];
+                }
+            }
+            return ret;
+        }
+
+        double dot(double[] l, double[,] r, int rIndex)
+        {
+            double ret = 0;
+            for (int i = 0; i < l.Length; ++i)
+            {
+                ret += l[i] * r[rIndex, i];
+            }
+            return ret;
+        }
+
+        double dot(double[] l, double[] r)
+        {
+            double ret = 0;
+            for (int i = 0; i < l.Length; ++i)
+            {
+                ret += l[i] * r[i];
+            }
+
+            return ret;
+        }
         
-        double sigmoid(int z)
+        double[,] mul(double[] vec, double[] matTrans)
+        {
+            double[,] ret = new double[vec.Length, matTrans.Length];
+
+            for (int row = 0; row < ret.GetLength(0); ++row)
+            {
+                for (int col = 0; col < ret.GetLength(1); ++col)
+                {
+                    ret[row, col] = vec[row] * matTrans[row];
+                }
+            }
+
+            return ret;
+        }
+        
+        double[] mul(double[,] matTrans, double[] vec, double[] sp)
+        {
+            double[] ret = new double[matTrans.GetLength(1)];
+            for (int i = 0; i < matTrans.GetLength(1); ++i)
+            {
+                for (int j = 0; j < matTrans.GetLength(0); ++j)
+                {
+                    ret[i] += vec[j] * matTrans[j, i] * sp[i];
+                }
+            }
+            return ret;
+        }
+
+        double sigmoid(double z)
         {
             return 1.0/ (1.0 + Math.Pow(Math.E, -z));
         }
 
-        double sigmoid_prime(int z)
+        double sigmoid_prime(double z)
         {
             return sigmoid(z) * (1-sigmoid(z));
         }
         
-        double[] cost_derivative(double[] output_activations, double[] y)
+        double[] cost_derivative(double[] outputActivations, int y)
         {
-            double[] result = new double[output_activations.Length];
-            for(int i = 0; i < output_activations.Length; ++i)
+            double[] ret = new double[outputActivations.Length];
+
+            for (int i = 0; i < outputActivations.Length; ++i)
             {
-                result[i] = output_activations[i] - y[i];
+                ret[i] = outputActivations[i] - (y == i ? 1.0 : 0.0);
             }
-            return result;
+
+            return ret;
         }
 
-        void feedforward(out double[] a)
+        double[] feedforward(double[] a)
         {
-            for(int b = 0; b < biases.Count; ++b)
+            double[] tmp = a;
+            for(int w = 0; w < weights.Count; ++w)
             {
-                for(int w = 0; w < weights.Count; ++w)
-                {
-                    double[] tmp = dot(weights[w], a);
+                tmp = dot(tmp, weights[w]);
                 
-                    for(int i = 0; i < tmp.Length; ++i)
-                    {
-                        a = sigmoid(tmp[i] + biases[b]);
-
-                    }
-                    
-                }                       
-            }
-        }
-        double[,] dot(double[,] a, double[,] b)
-        {
-                double[,] result = new double[a.GetLength(0), b.GetLength(1)];
-
-                for (int i = 0; i < a.GetLength(0); ++i)
+                for(int i = 0; i < tmp.Length; ++i)
                 {
-                    for (int j = 0; j < b.GetLength(1); ++j)
+                    tmp[i] = sigmoid(tmp[i] + biases[w][i]);
+                }
+            }
+            
+            return tmp;
+        }
+        //double[,] dot(double[,] a, double[,] b)
+        //{
+        //        double[,] result = new double[a.GetLength(0), b.GetLength(1)];
+
+        //        for (int i = 0; i < a.GetLength(0); ++i)
+        //        {
+        //            for (int j = 0; j < b.GetLength(1); ++j)
+        //            {
+        //                result [i, j] = 0;
+        //                for (int k = 0; k < a.GetLength(1); ++k)
+        //               {
+        //                    result[i, j] += a[i, k] * b[k, j];
+        //                }
+        //            }
+        //        }
+        //        return result;
+        //}
+        int evaluate()
+        {
+            int sum = 0;
+            for(int x = 0 ; x < testInputs.Count; ++x)
+            {
+                double[] result = feedforward(testInputs[x]);
+                int maxIndex = 0;
+                double max = result[0];
+                for (int i = 1; i < result.Length; ++i)
+                {
+                    if (result[i] > max)
                     {
-                        result [i, j] = 0;
-                        for (int k = 0; k < a.GetLength(1); ++k)
-                        {
-                            result[i, j] += a[i, k] * b[k, j];
-                        }
+                        max = result[i];
+                        maxIndex = i;
                     }
                 }
-                return result;
-        }
-        double evaluate(List<double[,]> test_data)
-        {   
-            
-            for(int x = 0 ; x < test_data.Count; ++x)
-            {
-                double[] result = feedforward(test_data[i]);
-                
+                if (testResults[x] == maxIndex)
+                {
+                    sum++;
+                }
             }
 
+            return sum;
         }    
     }
 }
