@@ -214,10 +214,10 @@ namespace DeepLearning
 
            for(int x = 0; x < mini_batch.Count; ++x)
            {
-                for(int y = 0; y < mini_batch.Count()-1; ++y)
+                for(int y = 0; y < mini_batch.Count-1; ++y)
                 {
-                    delta_nabla_b = backpropNablaB(x, y);
-                    delta_nabla_w = backpropNablaW(x, y);
+                    delta_nabla_b = backprop(x, y);
+                    delta_nabla_w = backprop(x, y);
                     
                     
                     nabla_b[x][y] += delta_nabla_b[x][y];
@@ -242,16 +242,12 @@ namespace DeepLearning
 
         }
 
-        private void backpropNablaB(int x, int y, out List<double[]> nabla_b, out List<double[,]> nabla_w)
+        private void backprop(int x, int y, out List<double[]> nabla_b, out List<double[,]> nabla_w)
         {
 
         }
 
-        private List<double[,]>backpropNablaW(int x, int y)
-        {
-
-        }
-
+        
         double sigmoid(int z)
         {
             return 1.0/ (1.0 + Math.Pow(Math.E, -z));
@@ -261,10 +257,60 @@ namespace DeepLearning
         {
             return sigmoid(z) * (1-sigmoid(z));
         }
+        
+        double[] cost_derivative(double[] output_activations, double[] y)
+        {
+            double[] result = new double[output_activations.Length];
+            for(int i = 0; i < output_activations.Length; ++i)
+            {
+                result[i] = output_activations[i] - y[i];
+            }
+            return result;
+        }
 
-        //Vector cost_derivative()
-        //{
-        //    Vector 
-        //}
+        void feedforward(out double[] a)
+        {
+            for(int b = 0; b < biases.Count; ++b)
+            {
+                for(int w = 0; w < weights.Count; ++w)
+                {
+                    double[] tmp = dot(weights[w], a);
+                
+                    for(int i = 0; i < tmp.Length; ++i)
+                    {
+                        a = sigmoid(tmp[i] + biases[b]);
+
+                    }
+                    
+                }                       
+            }
+        }
+        double[,] dot(double[,] a, double[,] b)
+        {
+                double[,] result = new double[a.GetLength(0), b.GetLength(1)];
+
+                for (int i = 0; i < a.GetLength(0); ++i)
+                {
+                    for (int j = 0; j < b.GetLength(1); ++j)
+                    {
+                        result [i, j] = 0;
+                        for (int k = 0; k < a.GetLength(1); ++k)
+                        {
+                            result[i, j] += a[i, k] * b[k, j];
+                        }
+                    }
+                }
+                return result;
+        }
+        double evaluate(List<double[,]> test_data)
+        {   
+            
+            for(int x = 0 ; x < test_data.Count; ++x)
+            {
+                double[] result = feedforward(test_data[i]);
+                
+            }
+
+        }    
     }
 }
