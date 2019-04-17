@@ -496,10 +496,17 @@ namespace DeepLearning
             return sum;
         }
 
+        Thread t;
         private void button1_Click(object sender, EventArgs e)
         {
-            Thread t = new Thread(() => SGD(30, 10, 3));
+            t = new Thread(() => SGD(30, 10, 3));
             t.Start();
+        }
+
+        protected override void OnFormClosing(System.Windows.Forms.FormClosingEventArgs e)
+        {
+            t.Abort();
+            base.OnFormClosing(e);
         }
     }
 }
