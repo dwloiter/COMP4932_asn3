@@ -169,7 +169,7 @@ namespace DeepLearning
 
                 for (int j = 0; j < sizes[i]; ++j)
                 {
-                    biases[biases.Count - 1][j] = random.NextDouble();
+                    biases[biases.Count - 1][j] = random.NextDouble() / 10;
                 }
             }
 
@@ -181,7 +181,7 @@ namespace DeepLearning
                 {
                     for (int col = 0; col < sizes[i]; ++col)
                     {
-                        weights[weights.Count - 1][row, col] = random.NextDouble();
+                        weights[weights.Count - 1][row, col] = random.NextDouble() / 10;
                     }
                 }
             }
@@ -299,8 +299,7 @@ namespace DeepLearning
                 delta_nabla_w.Add(new double[weights[w].GetLength(0), weights[w].GetLength(1)]);
             }
 
-            double[] activation = new double[x.Length];
-            Array.Copy(x, activation, x.Length);
+            double[] activation = x;
             List<double[]> activations = new List<double[]>();
             activations.Add(activation);
             List<double[]> zs = new List<double[]>();
@@ -383,7 +382,7 @@ namespace DeepLearning
             {
                 for (int col = 0; col < ret.GetLength(1); ++col)
                 {
-                    ret[row, col] = vec[row] * matTrans[row];
+                    ret[row, col] = vec[row] * matTrans[col];
                 }
             }
 
@@ -405,7 +404,8 @@ namespace DeepLearning
 
         double sigmoid(double z)
         {
-            return 1.0/ (1.0 + Math.Exp(-z));
+            double ret = 1.0 / (1.0 + Math.Exp(-z));
+            return ret;
         }
 
         double sigmoid_prime(double z)
