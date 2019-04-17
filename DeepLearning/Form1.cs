@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -39,6 +40,21 @@ namespace DeepLearning
 
         Random random;
 
+        private delegate void SafeCallDelegate(string text);
+
+        private void WriteTextSafe(string text)
+        {
+            if (Result.InvokeRequired)
+            {
+                var d = new SafeCallDelegate(WriteTextSafe);
+                Invoke(d, new object[] { text });
+            }
+            else
+            {
+                Result.Text += text;
+            }
+        }
+
         public Form1()
         {
             InitializeComponent();
@@ -55,7 +71,6 @@ namespace DeepLearning
             weights = new List<double[,]>();
 
             Init(sizes);
-            SGD(30, 10, 3);
         }
 
         private void LoadData()
@@ -201,8 +216,7 @@ namespace DeepLearning
                     update_mini_batch(i, i + miniBatchSize, eta);
                 }
 
-                // evaluate
-                Console.WriteLine("Epoch " + j + ": " + evaluate() + " / " + testInputs.Count);
+                WriteTextSafe("\nEpoch " + j + ": " + evaluate() + " / " + testInputs.Count);
             }
         }
 
@@ -480,6 +494,12 @@ namespace DeepLearning
             }
 
             return sum;
-        }    
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Thread t = new Thread(() => SGD(30, 10, 3));
+            t.Start();
+        }
     }
 }
