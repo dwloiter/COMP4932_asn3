@@ -37,8 +37,6 @@ namespace DeepLearning
         private List<double[]> biases;
         private List<double[,]> weights;
 
-        private List<double[,]> mini_batch;
-
         Random random;
 
         public Form1()
@@ -55,7 +53,6 @@ namespace DeepLearning
 
             biases = new List<double[]>();
             weights = new List<double[,]>();
-            mini_batch = new List<double[,]>();
 
             Init(sizes);
             SGD(30, 10, 3);
@@ -231,6 +228,7 @@ namespace DeepLearning
         {
             List<double[]> nabla_b = new List<double[]>();
             List<double[,]> nabla_w = new List<double[,]>();
+            int mini_batch_count = endIndex - startIndex;
             for (int b = 0; b < biases.Count(); ++b)
             {
                 nabla_b.Add(new double[biases[b].Length]);
@@ -273,7 +271,7 @@ namespace DeepLearning
                 {
                     for (int z = 0; z < weights[x].GetLength(1); ++z)
                     {
-                        weights[x][y, z] -= (eta / mini_batch.Count) * nabla_w[x][y, z];
+                        weights[x][y, z] -= (eta / mini_batch_count) * nabla_w[x][y, z];
                     }
                 }
             }
@@ -282,7 +280,7 @@ namespace DeepLearning
             {
                 for (int j = 0; j < biases[i].Length; ++j)
                 {
-                    biases[i][j] -= (eta / mini_batch.Count) * nabla_b[i][j];
+                    biases[i][j] -= (eta / mini_batch_count) * nabla_b[i][j];
                 }
             }
         }
@@ -322,6 +320,10 @@ namespace DeepLearning
             }
 
             double[] delta = cost_derivative(activations[activations.Count - 1], y);
+            for (int i = 0; i < delta.Length; ++i)
+            {
+                delta[i] *= sigmoid_prime(zs[zs.Count - 1][i]);
+            }
             delta_nabla_b[delta_nabla_b.Count - 1] = delta;
             delta_nabla_w[delta_nabla_w.Count - 1] = mul(delta, activations[activations.Count - 2]);
 
@@ -346,7 +348,7 @@ namespace DeepLearning
             {
                 for (int j = 0; j < r.GetLength(1); ++j)
                 {
-                    ret[i] += l[i] * r[i, j];
+                    ret[i] += l[j] * r[i, j];
                 }
             }
             return ret;
@@ -403,7 +405,7 @@ namespace DeepLearning
 
         double sigmoid(double z)
         {
-            return 1.0/ (1.0 + Math.Pow(Math.E, -z));
+            return 1.0/ (1.0 + Math.Exp(-z));
         }
 
         double sigmoid_prime(double z)
